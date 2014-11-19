@@ -81,6 +81,9 @@ var Tests = (function() {
     '{{ collection | size }}': function() {
       assertEqual( '3', render("{{user|size}}", {user:['','','']})  )
       assertEqual( '3', render("{{ user | size }}", {user:['','','']})  )
+      // collection as object
+      assertEqual( '3', render("{{user|size}}", {user:{a: 'a', b: 'b', c: 'c'}})  )
+      assertEqual( '3', render("{{ user | size }}", {user:{a: 'a', b: 'b', c: 'c'}})  )
     },
 
     '{{ string | upcase }}': function() {
