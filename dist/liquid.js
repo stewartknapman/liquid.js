@@ -1021,34 +1021,61 @@ Liquid.Template.registerTag( 'for', Liquid.Block.extend({
       else
         { offset = context.get( this.attributes['offset'] ) || 0; }
 
-      limit = context.get( this.attributes['limit'] );
+      limit = context.get( this.attributes['limit']);
 
-      rangeEnd = (limit) ? offset + limit + 1 : collection.length;
-      range = [ offset, rangeEnd - 1 ];
+      rangeEnd = (limit) ? offset + limit : collection.length;
+      range = [ offset, rangeEnd ];
 
       context.registers['for'][this.name] = rangeEnd;
     }
 
-    segment = collection.slice(range[0], range[1]);
+    if (typeof collection === 'object') {
+      if (Array.isArray(collection)) {
+        segment = collection.slice(range[0], range[1]);
+      } else {
+        segment = collection;
+      }
+    }
+
     if(!segment || segment.length == 0){ return ''; }
 
     context.stack(function(){
-      var length = segment.length;
-
-      segment.each(function(item, index){
-        context.set( self.variableName, item );
-        context.set( 'forloop', {
-          name:   self.name,
-          length: length,
-          index:  (index + 1),
-          index0: index,
-          rindex: (length - index),
-          rindex0:(length - index - 1),
-          first:  (index == 0),
-          last:   (index == (length - 1))
+      if (Array.isArray(segment)) {
+        var length = segment.length;
+        segment.each(function(item, index){
+          context.set( self.variableName, item );
+          context.set( 'forloop', {
+            name:   self.name,
+            length: length,
+            index:  (index + 1),
+            index0: index,
+            rindex: (length - index),
+            rindex0:(length - index - 1),
+            first:  (index == 0),
+            last:   (index == (length - 1))
+          });
+          output.push( (self.renderAll(self.nodelist, context) || []).join('') );
         });
-        output.push( (self.renderAll(self.nodelist, context) || []).join('') );
-      });
+      } else {
+        var length = Object.keys(segment).length;
+        var index = 0;
+        for (var key in segment) {
+          var item = segment[key];
+          context.set( self.variableName, item );
+          context.set( 'forloop', {
+            name:   self.name,
+            length: length,
+            index:  (index + 1),
+            index0: index,
+            rindex: (length - index),
+            rindex0:(length - index - 1),
+            first:  (index == 0),
+            last:   (index == (length - 1))
+          });
+          output.push( (self.renderAll(self.nodelist, context) || []).join('') );
+          index++;
+        }
+      }
     });
 
     return [output].flatten().join('');
