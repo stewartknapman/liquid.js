@@ -362,8 +362,10 @@ var Tests = (function() {
       assertEqual('', tmpl.render());
       
       // Assign with a filter
+      console.log('=====================');
       tmpl = Liquid.parse("{% assign my_handle = 'My Handle' | handleize %}.{{ my_handle }}.");
       assertEqual('.my-handle.', tmpl.render());
+      console.log('=====================');
     },
 
     // "{% cache varname %} content {% endcache %}": function() {

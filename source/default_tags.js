@@ -18,10 +18,15 @@ var hackObjectEach = function(fun /*, thisp*/) {
 // Default Tags...
 Liquid.Template.registerTag( 'assign', Liquid.Tag.extend({
 
+  // TODO: run filters on variables as they are being assigned
+  // add to end: ((\s*\|\s*(.*))+)
+
   tagSyntax: /((?:\(?[\w\-\.\[\]]\)?)+)\s*=\s*((?:"[^"]+"|'[^']+'|[^\s,|]+)+)/,
   
   init: function(tagName, markup, tokens) {
     var parts = markup.match(this.tagSyntax)
+    console.log('assign:', parts);
+    
     if( parts ) {
       this.to   = parts[1];
       this.from = parts[2];
