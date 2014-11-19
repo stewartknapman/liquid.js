@@ -405,6 +405,27 @@ var Tests = (function() {
       assertEqual(" true  false  false ", render("{% for item in (1..3) %} {{ forloop.first }} {% endfor %}"));
       assertEqual(" false  false  true ", render("{% for item in (1..3) %} {{ forloop.last }} {% endfor %}"));
       // TODO: Add test for the rest of the forloop variables too...
+      
+      // Test limit and offset
+      assertEqual("12", render("{% for item in (1..6) limit:2 %}{{ item }}{% endfor %}"));
+      assertEqual("3456", render("{% for item in (1..6) offset:2 %}{{ item }}{% endfor %}"));
+      assertEqual("34", render("{% for item in (1..6) limit:2 offset:2 %}{{ item }}{% endfor %}"));
+      
+      
+      // Test looping of a collection
+      var collection_1 = [
+      { title: 'title 1' },
+      { title: 'title 2' },
+      { title: 'title 3' }
+      ];
+      assertEqual(" title 1  title 2  title 3 ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_1 }));
+      
+      var collection_2 = {
+        item_1: { title: 'title 1' },
+        item_2: { title: 'title 2' },
+        item_3: { title: 'title 3' }
+      }
+      //assertEqual(" title 1  title 2  title 3 ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_2 }));
     },
 
     "{% if conditions %}{% else %}{% endif %}": function() {
@@ -478,6 +499,13 @@ var Tests = (function() {
       // TODO Consider using a Context object directly instead, calling variable on it directly
       assertEqual("", render("{{ collection['missing_key'].value }}"))
       assertEqual("", render("{{ collection['missing_key'].value }}", {collection: {}}))
+    },
+    
+    // Stewie
+    "{{ collection['my_key'] }}": function() {
+      // Double check that we can step through objects to access another
+      assertEqual("hello world", render("{{ collection['my_key'].test }}", {collection: { my_key: { test: 'hello world' } }}))
+      assertEqual("hello world", render("{{ collection.my_key.test }}", {collection: { my_key: { test: 'hello world' } }}))
     }
   }
 })();

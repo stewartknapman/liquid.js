@@ -259,20 +259,39 @@ Liquid.Template.registerTag( 'for', Liquid.Block.extend({
       else
         { offset = context.get( this.attributes['offset'] ) || 0; }
       
-      limit = context.get( this.attributes['limit'] );
+      limit = context.get( this.attributes['limit']);
       
-      rangeEnd = (limit) ? offset + limit + 1 : collection.length;
-      range = [ offset, rangeEnd - 1 ];
+      rangeEnd = (limit) ? offset + limit : collection.length;
+      range = [ offset, rangeEnd ];
       
       // Save the range end in the registers so that future calls to
       // offset:continue have something to pick up
       context.registers['for'][this.name] = rangeEnd;
     }
 
+    if (typeof collection === 'object') {
+      if (Array.isArray(collection)) {
+        segment = collection.slice(range[0], range[1]);
+      } else {
+        segment = {}
+        var i = 0;
+        for (var k in collection) {
+          if (i >= range[0] && (i < range[1] || range[1] == undefined)) {
+            segment[k] = collection[k];
+          }
+          i++;
+        }
+      }
+    }
+
     // Assumes the collection is an array like object...
-    segment = collection.slice(range[0], range[1]);
-    if(!segment || segment.length == 0){ return ''; }
+    //console.log(range[0], range[1]);
+    //console.log('collection', typeof collection, range[0], range[1], collection);
+    //segment = collection.slice(range[0], range[1]);
+    //console.log('segment', typeof segment, segment);
     
+    if(!segment || segment.length == 0){ return ''; }
+        
     context.stack(function(){
       var length = segment.length;
       
