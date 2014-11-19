@@ -1278,7 +1278,13 @@ Liquid.Template.registerFilter({
   },
 
   size: function(iterable) {
-    return (iterable['length']) ? iterable.length : 0;
+    var length = 0;
+    if (iterable['length']) {
+      length = iterable.length;
+    } else if (typeof iterable === 'object') {
+      length = Object.keys(iterable).length; // need polyfill?
+    }
+    return length;
   },
 
   downcase: function(input) {
