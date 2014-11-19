@@ -1294,7 +1294,6 @@ Liquid.Template.registerFilter({
   },
 
   handleize: function(input) {
-    console.log('handleize', input);
     return input.toString().replace(/\s/g, '-').toLowerCase();
   },
 
