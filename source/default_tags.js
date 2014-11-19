@@ -269,46 +269,66 @@ Liquid.Template.registerTag( 'for', Liquid.Block.extend({
       context.registers['for'][this.name] = rangeEnd;
     }
 
+    // Assumes the collection is an array like object...
+    // segment = collection.slice(range[0], range[1]);
+    // Stewie: Don't assume incase we want to loop a hash like object
     if (typeof collection === 'object') {
       if (Array.isArray(collection)) {
         segment = collection.slice(range[0], range[1]);
       } else {
-        segment = {}
-        var i = 0;
-        for (var k in collection) {
-          if (i >= range[0] && (i < range[1] || range[1] == undefined)) {
-            segment[k] = collection[k];
-          }
-          i++;
-        }
+        segment = collection;
+        // Slice object ???
+        // needs hasOwnProperty
+        // segment = {}
+        // var i = 0;
+        // for (var k in collection) {
+        //   if (i >= range[0] && (i < range[1] || range[1] == undefined)) {
+        //     segment[k] = collection[k];
+        //   }
+        //   i++;
+        // }
       }
     }
-
-    // Assumes the collection is an array like object...
-    //console.log(range[0], range[1]);
-    //console.log('collection', typeof collection, range[0], range[1], collection);
-    //segment = collection.slice(range[0], range[1]);
-    //console.log('segment', typeof segment, segment);
     
     if(!segment || segment.length == 0){ return ''; }
         
     context.stack(function(){
-      var length = segment.length;
-      
-      segment.each(function(item, index){
-        context.set( self.variableName, item );
-        context.set( 'forloop', {
-          name:   self.name,
-          length: length,
-          index:  (index + 1),
-          index0: index,
-          rindex: (length - index),
-          rindex0:(length - index - 1),
-          first:  (index == 0),
-          last:   (index == (length - 1))
+      if (Array.isArray(segment)) {
+        var length = segment.length;
+        segment.each(function(item, index){
+          context.set( self.variableName, item );
+          context.set( 'forloop', {
+            name:   self.name,
+            length: length,
+            index:  (index + 1),
+            index0: index,
+            rindex: (length - index),
+            rindex0:(length - index - 1),
+            first:  (index == 0),
+            last:   (index == (length - 1))
+          });
+          output.push( (self.renderAll(self.nodelist, context) || []).join('') );
         });
-        output.push( (self.renderAll(self.nodelist, context) || []).join('') );
-      });
+      } else {
+        var length = Object.keys(segment).length;  
+        var index = 0;  
+        for (var key in segment) {
+          var item = segment[key];
+          context.set( self.variableName, item );
+          context.set( 'forloop', {
+            name:   self.name,
+            length: length,
+            index:  (index + 1),
+            index0: index,
+            rindex: (length - index),
+            rindex0:(length - index - 1),
+            first:  (index == 0),
+            last:   (index == (length - 1))
+          });
+          output.push( (self.renderAll(self.nodelist, context) || []).join('') );
+          index++;
+        }
+      }
     });
     
     return [output].flatten().join('');

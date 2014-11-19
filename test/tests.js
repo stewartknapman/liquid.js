@@ -421,11 +421,11 @@ var Tests = (function() {
       assertEqual(" title 1  title 2  title 3 ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_1 }));
       
       var collection_2 = {
-        item_1: { title: 'title 1' },
-        item_2: { title: 'title 2' },
-        item_3: { title: 'title 3' }
+        item_1: { title: 'moose' },
+        item_2: { title: 'monkey' },
+        item_3: { title: 'weesle' }
       }
-      //assertEqual(" title 1  title 2  title 3 ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_2 }));
+      assertEqual(" moose  monkey  weesle ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_2 }));
     },
 
     "{% if conditions %}{% else %}{% endif %}": function() {
