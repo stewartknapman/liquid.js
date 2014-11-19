@@ -97,13 +97,17 @@ var Tests = (function() {
       assertEqual( 'Bob', render("{{user|capitalize}}", {user:'bob'})  )
       assertEqual( 'Bob', render("{{ user | capitalize }}", {user:'bob'})  )
     },
+    
+    '{{ string | handleize }}': function () {
+      assertEqual( 'my-handle', render("{{title|handleize}}", {title:'My Handle'})  )
+      assertEqual( 'my-handle', render("{{ title | handleize }}", {title:'My Handle'})  )
+    },
 
     '{{ string | escape }}': function() {
       assertEqual( '&lt;br/&gt;', render("{{'<br/>'|escape}}")  )
       assertEqual( '&lt;br/&gt;', render("{{ '<br/>' | escape }}")  )
       assertEqual( 'this &amp; &quot;that&quot;', render("{{ 'this & \"that\"' | escape }}")  )
     },
-
 
     '{{ string | truncate }}': function() {
       assertEqual(

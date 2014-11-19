@@ -1293,6 +1293,11 @@ Liquid.Template.registerFilter({
     return input.toString().capitalize();
   },
 
+  handleize: function(input) {
+    console.log('handleize', input);
+    return input.toString().replace(/\s/g, '-').toLowerCase();
+  },
+
   escape: function(input) {
     var self = this;
     return input.replace(/[&<>"']/g, function(chr) {
