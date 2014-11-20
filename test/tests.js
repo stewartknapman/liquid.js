@@ -449,6 +449,10 @@ var Tests = (function() {
       }
       assertEqual(" moose  monkey  weesle ", render("{% for item in collection %} {{ item.title }} {% endfor %}", { collection: collection_2 }));
     },
+    
+    "{% for item in collection %}{% assign myvar = item %}{% endfor %}{{ myvar }}": function() {
+      assertEqual(".3.", render("{% assign myvar = 'X' %}{% for item in (1..3) %}{% assign myvar = item %}{% endfor %}.{{ myvar }}."));
+    },
 
     "{% if conditions %}{% else %}{% endif %}": function() {
       assertEqual("TRUE", render("{% if true %}TRUE{% endif %}"))

@@ -63,7 +63,7 @@ Liquid.Template.registerTag( 'capture', Liquid.Block.extend({
   tagSyntax: /(\w+)/,
   
   init: function(tagName, markup, tokens) {
-    var parts = markup.match(this.tagSyntax)
+    var parts = markup.match(this.tagSyntax);
     if( parts ) {
       this.to = parts[1];
     } else {
@@ -73,7 +73,8 @@ Liquid.Template.registerTag( 'capture', Liquid.Block.extend({
   },
   render: function(context) {
     var output = this._super(context);
-    context.set( this.to, [output].flatten().join('') );
+    //context.set( this.to, [output].flatten().join('') );
+    context.scopes.last()[this.to.toString()] = [output].flatten().join('');
     return '';
   }
 }));
