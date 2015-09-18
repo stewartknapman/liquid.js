@@ -788,10 +788,7 @@ Liquid.Template.registerTag( 'assign', Liquid.Tag.extend({
 
   init: function(tagName, markup, tokens) {
     var parts = markup.match(this.tagSyntax);
-<<<<<<< HEAD
 
-=======
->>>>>>> 72e061a11eb81cc01156c3102f6a7d793d893523
     if( parts ) {
       this.to   = parts[1];
       this.from = parts[2];
