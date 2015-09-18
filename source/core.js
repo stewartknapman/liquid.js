@@ -17,7 +17,8 @@ var Liquid = {
   
 };
 
-require('./class').call(Liquid);
+require('./class').init_class(Liquid);
+Liquid.Tag = Liquid.Class.extend(require('./tag'));
 
 //= require "extensions"
 //= require "class"
@@ -43,3 +44,4 @@ if (typeof exports !== 'undefined') {
   }
   exports.Liquid = Liquid;
 }
+window.Liquid = Liquid;
