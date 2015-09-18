@@ -17,6 +17,8 @@ var Liquid = {
   
 };
 
+require('./class').call(Liquid);
+
 //= require "extensions"
 //= require "class"
 //= require "tag"

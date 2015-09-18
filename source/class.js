@@ -3,7 +3,7 @@
  * MIT Licensed.
  */
 // Inspired by base2 and Prototype
-(function(){
+module.exports = (function(){
   var initializing = false, fnTest = /xyz/.test(function(){xyz;}) ? /\b_super\b/ : /.*/;
 
   // The base Class implementation (does nothing)
@@ -61,5 +61,5 @@
    
     return Class;
   };
-}).call(Liquid);
+}) //.call(Liquid);
 
