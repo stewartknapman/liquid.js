@@ -156,6 +156,109 @@ module.exports.init_class = function (obj) {
 },{}],3:[function(require,module,exports){
 module.exports = {
 
+  init: function(left, operator, right) {
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+    this.childRelation = null;
+    this.childCondition = null;
+    this.attachment = null;
+  },
+
+  evaluate: function(context) {
+    context = context || new Liquid.Context();
+    var result = this.interpretCondition(this.left, this.right, this.operator, context);
+    switch(this.childRelation) {
+      case 'or':
+        return (result || this.childCondition.evaluate(context));
+      case 'and':
+        return (result && this.childCondition.evaluate(context));
+      default:
+        return result;
+    }
+  },
+
+  or: function(condition) {
+    this.childRelation = 'or';
+    this.childCondition = condition;
+  },
+
+  and: function(condition) {
+    this.childRelation = 'and';
+    this.childCondition = condition;
+  },
+
+  attach: function(attachment) {
+    this.attachment = attachment;
+    return this.attachment;
+  },
+
+  isElse: false,
+
+  interpretCondition: function(left, right, op, context) {
+    // If the operator is empty this means that the decision statement is just
+    // a single variable. We can just pull this variable from the context and
+    // return this as the result.
+    if(!op)
+      { return context.get(left); }
+
+    left = context.get(left);
+    right = context.get(right);
+    op = Liquid.Condition.operators[op];
+    if(!op)
+      { throw ("Unknown operator "+ op); }
+
+    var results = op(left, right);
+    return results;
+  },
+
+  toString: function() {
+    return "<Condition "+ this.left +" "+ this.operator +" "+ this.right +">";
+  }
+
+};
+
+module.exports.operators = {
+  '==': function(l,r) {  return (l == r); },
+  '=':  function(l,r) { return (l == r); },
+  '!=': function(l,r) { return (l != r); },
+  '<>': function(l,r) { return (l != r); },
+  '<':  function(l,r) { return (l < r); },
+  '>':  function(l,r) { return (l > r); },
+  '<=': function(l,r) { return (l <= r); },
+  '>=': function(l,r) { return (l >= r); },
+
+  'contains': function(l,r) {
+    if ( Object.prototype.toString.call(l) === '[object Array]' ) {
+      return l.indexOf(r) >= 0;
+    } else {
+      return l.match(r);
+    }
+  },
+  // HACK Apply from Liquid.extensions.object; extending Object sad.
+  //'hasKey': function(l,r) { return l.hasKey(r); }
+  'hasKey':   function(l,r) { return Liquid.extensions.object.hasKey.call(l, r); },
+  //'hasValue': function(l,r) { return l.hasValue(r); }
+  'hasValue': function(l,r) { return Liquid.extensions.object.hasValue.call(l, r); }
+}
+
+module.exports.ElseCondition = {
+
+  isElse: true,
+
+  evaluate: function(context) {
+    return true;
+  },
+
+  toString: function() {
+    return "<ElseCondition>";
+  }
+
+};
+
+},{}],4:[function(require,module,exports){
+module.exports = {
+
   init: function(assigns, registers, rethrowErrors) {
     this.scopes = [ assigns ? assigns : {} ];
     this.registers = registers ? registers : {};
@@ -384,7 +487,7 @@ module.exports = {
 
 };
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var Liquid = {
 
   author: '<%= AUTHOR %>',
@@ -404,6 +507,9 @@ var Liquid = {
   
 };
 
+require('./extensions')();
+Liquid.extensions = require('./extensions').extensions;
+
 require('./class').init_class(Liquid);
 Liquid.Tag = Liquid.Class.extend(require('./tag'));
 Liquid.Block = Liquid.Tag.extend(require('./block'));
@@ -416,9 +522,21 @@ Liquid.Strainer.requiredMethods = require('./strainer').requiredMethods;
 Liquid.Strainer.create = require('./strainer').create;
 
 Liquid.Context = Liquid.Class.extend(require('./context'));
-Liquid.Template = Liquid.Class.extend(require('./template'));
 
-// module.exports = {
+Liquid.Template = Liquid.Class.extend(require('./template'));
+Liquid.Template.tags = require('./template').tags;
+Liquid.Template.registerTag = require('./template').registerTag;
+Liquid.Template.registerFilter = require('./template').registerFilter;
+Liquid.Template.tokenize = require('./template').tokenize;
+Liquid.Template.parse = require('./template').parse;
+
+Liquid.Variable = Liquid.Class.extend(require('./variable'));
+
+Liquid.Condition = Liquid.Class.extend(require('./condition'));
+Liquid.Condition.operators = require('./condition').operators;
+Liquid.ElseCondition = Liquid.Condition.extend(require('./condition').ElseCondition);
+
+Liquid.Drop = Liquid.Class.extend(require('./drop'));
 
 //= require "extensions"
 //= require "class"
@@ -445,7 +563,7 @@ if (typeof exports !== 'undefined') {
   exports.Liquid = Liquid;
 }
 window.Liquid = Liquid;
-},{"./block":1,"./class":2,"./context":3,"./document":5,"./strainer":6,"./tag":7,"./template":8}],5:[function(require,module,exports){
+},{"./block":1,"./class":2,"./condition":3,"./context":4,"./document":6,"./drop":7,"./extensions":8,"./strainer":9,"./tag":10,"./template":11,"./variable":12}],6:[function(require,module,exports){
 module.exports = {
 
   init: function(tokens){
@@ -457,8 +575,188 @@ module.exports = {
     // Documents don't need to assert this...
   }
 };
-},{}],6:[function(require,module,exports){
-var Strainer = {
+},{}],7:[function(require,module,exports){
+module.exports = {
+  setContext: function(context) {
+    this.context = context;
+  },
+  beforeMethod: function(method) {
+    
+  },
+  invokeDrop: function(method) {
+    var results = this.beforeMethod();
+    if( !results && (method in this) )
+      { results = this[method].apply(this); }
+    return results;
+  },
+  hasKey: function(name) {
+    return true;
+  }
+};
+
+},{}],8:[function(require,module,exports){
+module.exports = function () {
+  console.log('Ext');
+  
+  // Array.indexOf
+  if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(obj) {
+      for (var i=0; i<this.length; i++) {
+        if (this[i] == obj) return i;
+      }
+      
+      return -1;
+    };
+  }
+  
+  // Array.clear
+  if (!Array.prototype.clear) {
+    Array.prototype.clear = function() {
+      //while (this.length > 0) this.pop();
+      this.length = 0;
+    };
+  }
+  
+  // Array.map
+  if (!Array.prototype.map) {
+    Array.prototype.map = function(fun /*, thisp*/) {
+      var len = this.length;
+      if (typeof fun != "function")
+        throw 'Array.map requires first argument to be a function';
+  
+      var res = new Array(len);
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++) {
+        if (i in this)
+          res[i] = fun.call(thisp, this[i], i, this);
+      }
+  
+      return res;
+    };
+  }
+  
+  // Array.first
+  if (!Array.prototype.first) {
+    Array.prototype.first = function() {
+      return this[0];
+    };
+  }
+  
+  // Array.last
+  if (!Array.prototype.last) {
+    Array.prototype.last = function() {
+      return this[this.length - 1];
+    };
+  }
+  
+  // Array.flatten
+  if (!Array.prototype.flatten) {
+    Array.prototype.flatten = function() {
+      var len = this.length;
+      var arr = [];
+      for (var i = 0; i < len; i++) {
+        // TODO This supposedly isn't safe in multiple frames;
+        // http://stackoverflow.com/questions/767486/how-do-you-check-if-a-variable-is-an-array-in-javascript
+        // http://stackoverflow.com/questions/4775722/javascript-check-if-object-is-array
+        if (this[i] instanceof Array) {
+          arr = arr.concat(this[i]);
+        } else {
+          arr.push(this[i]);
+        }
+      }
+  
+      return arr;
+    };
+  }
+  
+  // Array.each
+  if (!Array.prototype.each) {
+    Array.prototype.each = function(fun /*, thisp*/) {
+      var len = this.length;
+      if (typeof fun != "function")
+        throw 'Array.each requires first argument to be a function';
+  
+      var thisp = arguments[1];
+      for (var i = 0; i < len; i++) {
+        if (i in this)
+          fun.call(thisp, this[i], i, this);
+      }
+  
+      return null;
+    };
+  }
+  
+  // Array.include
+  if (!Array.prototype.include) {
+    Array.prototype.include = function(arg) {
+      var len = this.length;
+  
+      return this.indexOf(arg) >= 0;
+      for (var i = 0; i < len; i++) {
+        if (arg == this[i]) return true;
+      }
+  
+      return false;
+    };
+  }
+  
+  
+  // String.capitalize
+  if (!String.prototype.capitalize) {
+    String.prototype.capitalize = function() {
+      return this.charAt(0).toUpperCase() + this.substring(1).toLowerCase();
+    };
+  }
+  
+  // String.strip
+  if (!String.prototype.strip) {
+    String.prototype.strip = function() {
+      return this.replace(/^\s+/, '').replace(/\s+$/, '');
+    };
+  }
+};
+
+// NOTE Having issues conflicting with jQuery stuff when setting Object 
+// prototype settings; instead add into Liquid.Object.extensions and use in 
+// the particular location; can add into Object.prototype later if we want.
+var extensions = {};
+extensions.object = {};
+
+// Object.update
+extensions.object.update = function(newObj) {
+  for (var p in newObj) {
+    this[p] = newObj[p];
+  }
+
+  return this;
+};
+//if (!Object.prototype.update) {
+//  Object.prototype.update = Liquid.extensions.object.update
+//}
+
+// Object.hasKey
+extensions.object.hasKey = function(arg) {
+  return !!this[arg];
+};
+//if (!Object.prototype.hasKey) {
+//  Object.prototype.hasKey = Liquid.extensions.object.hasKey
+//}
+
+// Object.hasValue
+extensions.object.hasValue = function(arg) {
+  for (var p in this) {
+    if (this[p] == arg) return true;
+  }
+
+  return false;
+};
+//if (!Object.prototype.hasValue) {
+//  Object.prototype.hasValue = Liquid.extensions.object.hasValue
+//}
+
+module.exports.extensions = extensions;
+},{}],9:[function(require,module,exports){
+module.exports = {
 
   init: function(context) {
     this.context = context;
@@ -471,7 +769,6 @@ var Strainer = {
     return (methodName in this);
   }
 };
-module.exports = Strainer;
 
 module.exports.filters = {};
 
@@ -493,7 +790,7 @@ module.exports.create = function(context) {
   }
   return strainer;
 }
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = {
 
   init: function(tagName, markup, tokens) {
@@ -513,8 +810,8 @@ module.exports = {
   
   // From ruby: def name; self.class.name.downcase; end
 };
-},{}],8:[function(require,module,exports){
-var Template = {
+},{}],11:[function(require,module,exports){
+module.exports = {
 
   init: function() {
     this.root = null;
@@ -575,28 +872,72 @@ var Template = {
 };
 
 
-Template.tags = {};
+module.exports.tags = {};
 
-Template.registerTag = function(name, klass) {
+module.exports.registerTag = function(name, klass) {
   Liquid.Template.tags[ name ] = klass;
-}
+};
 
-Template.registerFilter = function(filters) {
+module.exports.registerFilter = function(filters) {
   Liquid.Strainer.globalFilter(filters)
-}
+};
 
-Template.tokenize = function(src) {
+module.exports.tokenize = function(src) {
   var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
   // removes the rogue empty element at the beginning of the array
   if(tokens[0] == ''){ tokens.shift(); }
 //  console.log("Source tokens:", tokens)
   return tokens;
-}
+};
 
-
-Template.parse =  function(src) {
+module.exports.parse = function(src) {
   return (new Liquid.Template()).parse(src);
-}
+};
+},{}],12:[function(require,module,exports){
+module.exports = {
 
-module.exports = Template;
-},{}]},{},[4]);
+  init: function(markup) {
+    this.markup = markup;
+    this.name = null;
+    this.filters = [];
+    var self = this;
+    var match = markup.match(/\s*("[^"]+"|'[^']+'|[^\s,|]+)/);
+    if( match ) {
+      this.name = match[1];
+      var filterMatches = markup.match(/\|\s*(.*)/);
+      if(filterMatches) {
+        var filters = filterMatches[1].split(/\|/);
+        filters.each(function(f){
+          var matches = f.match(/\s*(\w+)/);
+          if(matches) {
+            var filterName = matches[1];
+            var filterArgs = [];
+            (f.match(/(?:[:|,]\s*)("[^"]+"|'[^']+'|[^\s,|]+)/g) || []).flatten().each(function(arg){
+              var cleanupMatch = arg.match(/^[\s|:|,]*(.*?)[\s]*$/);
+              if(cleanupMatch)
+                { filterArgs.push( cleanupMatch[1] );}
+            });
+            self.filters.push( [filterName, filterArgs] );
+          }
+        });
+      }
+    }
+  },
+  
+  render: function(context) {
+    if(this.name == null){ return ''; }
+    var output = context.get(this.name);
+    this.filters.each(function(filter) {
+      var filterName = filter[0],
+          filterArgs = (filter[1] || []).map(function(arg){
+            return context.get(arg);
+          });
+      filterArgs.unshift(output); // Push in input value into the first argument spot...
+      output = context.invoke(filterName, filterArgs);
+    });
+
+    return output;
+  }
+};
+
+},{}]},{},[5]);

@@ -17,6 +17,9 @@ var Liquid = {
   
 };
 
+require('./extensions')();
+Liquid.extensions = require('./extensions').extensions;
+
 require('./class').init_class(Liquid);
 Liquid.Tag = Liquid.Class.extend(require('./tag'));
 Liquid.Block = Liquid.Tag.extend(require('./block'));

@@ -14,4 +14,4 @@ module.exports = {
   hasKey: function(name) {
     return true;
   }
-});
+};

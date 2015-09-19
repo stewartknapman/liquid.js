@@ -60,7 +60,7 @@ module.exports = {
     return "<Condition "+ this.left +" "+ this.operator +" "+ this.right +">";
   }
 
-});
+};
 
 module.exports.operators = {
   '==': function(l,r) {  return (l == r); },
