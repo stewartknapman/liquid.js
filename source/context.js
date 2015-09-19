@@ -1,4 +1,4 @@
-Liquid.Context = Liquid.Class.extend({
+module.exports = {
 
   init: function(assigns, registers, rethrowErrors) {
     this.scopes = [ assigns ? assigns : {} ];
@@ -226,4 +226,4 @@ Liquid.Context = Liquid.Class.extend({
     return obj != null && typeof(obj) == 'object';
   }
 
-});
+};

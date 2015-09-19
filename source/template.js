@@ -1,4 +1,4 @@
-Liquid.Template = Liquid.Class.extend({
+var Template = {
 
   init: function() {
     this.root = null;
@@ -59,17 +59,17 @@ Liquid.Template = Liquid.Class.extend({
 });
 
 
-Liquid.Template.tags = {};
+Template.tags = {};
 
-Liquid.Template.registerTag = function(name, klass) {
+Template.registerTag = function(name, klass) {
   Liquid.Template.tags[ name ] = klass;
 }
 
-Liquid.Template.registerFilter = function(filters) {
+Template.registerFilter = function(filters) {
   Liquid.Strainer.globalFilter(filters)
 }
 
-Liquid.Template.tokenize = function(src) {
+Template.tokenize = function(src) {
   var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
   // removes the rogue empty element at the beginning of the array
   if(tokens[0] == ''){ tokens.shift(); }
@@ -78,6 +78,8 @@ Liquid.Template.tokenize = function(src) {
 }
 
 
-Liquid.Template.parse =  function(src) {
+Template.parse =  function(src) {
   return (new Liquid.Template()).parse(src);
 }
+
+module.exports = Template;

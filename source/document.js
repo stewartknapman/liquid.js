@@ -1,4 +1,4 @@
-Liquid.Document = Liquid.Block.extend({
+module.exports = {
 
   init: function(tokens){
     this.blockDelimiter = []; // [], really?
@@ -8,4 +8,4 @@ Liquid.Document = Liquid.Block.extend({
   assertMissingDelimitation: function() {
     // Documents don't need to assert this...
   }
-});
+};

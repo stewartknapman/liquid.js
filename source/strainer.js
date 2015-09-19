@@ -1,4 +1,4 @@
-Liquid.Strainer = Liquid.Class.extend({
+var Strainer = {
 
   init: function(context) {
     this.context = context;
@@ -10,20 +10,20 @@ Liquid.Strainer = Liquid.Class.extend({
     if (Liquid.Strainer.requiredMethods.include(methodName)) return false;
     return (methodName in this);
   }
-});
+};
 
-Liquid.Strainer.filters = {};
+Strainer.filters = {};
 
-Liquid.Strainer.globalFilter = function(filters) {
+Strainer.globalFilter = function(filters) {
   for (var f in filters) {
     Liquid.Strainer.filters[f] = filters[f];
   }
 }
 
 // Array of methods to keep...
-Liquid.Strainer.requiredMethods = ['respondTo', 'context']; 
+Strainer.requiredMethods = ['respondTo', 'context']; 
 
-Liquid.Strainer.create = function(context) {
+Strainer.create = function(context) {
   var strainer = new Liquid.Strainer(context);
   for (var f in Liquid.Strainer.filters) {
     //console.log('f', f);
@@ -32,3 +32,5 @@ Liquid.Strainer.create = function(context) {
   }
   return strainer;
 }
+
+module.exports = Strainer;

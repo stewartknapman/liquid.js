@@ -1,4 +1,4 @@
-Liquid.Block = Liquid.Tag.extend({
+module.exports = {
   
   init: function(tagName, markup, tokens){
     this.blockName = tagName;
@@ -81,4 +81,4 @@ Liquid.Block = Liquid.Tag.extend({
   assertMissingDelimitation: function(){
     throw (this.blockName +" tag was never closed");
   }
-});
+};

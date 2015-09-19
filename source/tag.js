@@ -1,5 +1,3 @@
-//Liquid.Tag = Liquid.Class.extend({
-  
 module.exports = {
 
   init: function(tagName, markup, tokens) {
@@ -18,5 +16,4 @@ module.exports = {
   }
   
   // From ruby: def name; self.class.name.downcase; end
-//});
 };

@@ -19,6 +19,13 @@ var Liquid = {
 
 require('./class').init_class(Liquid);
 Liquid.Tag = Liquid.Class.extend(require('./tag'));
+Liquid.Block = Liquid.Tag.extend(require('./block'));
+Liquid.Document = Liquid.Block.extend(require('./document'));
+Liquid.Strainer = Liquid.Class.extend(require('./strainer'));
+Liquid.Context = Liquid.Class.extend(require('./context'));
+Liquid.Template = Liquid.Class.extend(require('./template'));
+
+// module.exports = {
 
 //= require "extensions"
 //= require "class"
