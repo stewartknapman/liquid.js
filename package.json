@@ -2,13 +2,13 @@
   "name": "liquid.js",
   "version": "1.3.2",
   "description": "JavaScript port of Tobias Luetke's Liquid template engine.",
-  "main": "dist/liquid.js",
+  "main": "source/core.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "open ./test/liquid-tests.html",
-    "build": "browserify ./source/core.js -o ./dist/bundle.js",
+    "build": "browserify ./source/core.js -o ./dist/liquid.js",
     "build-test": "npm run build && npm run test"
   },
   "repository": {

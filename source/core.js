@@ -45,24 +45,6 @@ if(!(new Date()).strftime) {
   Date.prototype.strftime = require('strftime');
 };
 
-//= require "extensions"
-//= require "class"
-//= require "tag"
-//= require "block"
-//= require "document"
-//= require "strainer"
-//= require "context"
-//= require "template"
-//= require "variable"
-//= require "condition"
-//= require "drop"
-//= require "default_tags"
-//= require "default_filters"
-
-
-//= require <strftime>
-//= require <split>
-
 if (typeof exports !== 'undefined') {
   if (typeof module !== 'undefined' && module.exports) {
     exports = module.exports = Liquid;
