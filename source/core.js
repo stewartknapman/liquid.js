@@ -51,4 +51,6 @@ if (typeof exports !== 'undefined') {
   }
   exports.Liquid = Liquid;
 }
-window.Liquid = Liquid;
+if (typeof window !== 'undefined') {
+  window.Liquid = Liquid;
+}
