@@ -126,7 +126,7 @@ module.exports = {
     if(!(date instanceof Date) && typeof(input) == 'number'){ date = new Date(input * 1000); }
     if(!(date instanceof Date) && typeof(input) == 'string'){ date = new Date(Date.parse(input));}
     if(!(date instanceof Date)){ return input; } // Punt
-    return date.strftime(format);
+    return date.strftime(format, date);
   },
   
   first: function(input) {
