@@ -1,4 +1,4 @@
-Liquid.Variable = Liquid.Class.extend({
+module.exports = {
 
   init: function(markup) {
     this.markup = markup;

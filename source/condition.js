@@ -1,4 +1,4 @@
-Liquid.Condition = Liquid.Class.extend({
+module.exports = {
 
   init: function(left, operator, right) {
     this.left = left;
@@ -62,7 +62,7 @@ Liquid.Condition = Liquid.Class.extend({
 
 });
 
-Liquid.Condition.operators = {
+module.exports.operators = {
   '==': function(l,r) {  return (l == r); },
   '=':  function(l,r) { return (l == r); },
   '!=': function(l,r) { return (l != r); },
@@ -86,7 +86,7 @@ Liquid.Condition.operators = {
   'hasValue': function(l,r) { return Liquid.extensions.object.hasValue.call(l, r); }
 }
 
-Liquid.ElseCondition = Liquid.Condition.extend({
+module.exports.ElseCondition = {
 
   isElse: true,
 
@@ -98,4 +98,4 @@ Liquid.ElseCondition = Liquid.Condition.extend({
     return "<ElseCondition>";
   }
 
-});
+};

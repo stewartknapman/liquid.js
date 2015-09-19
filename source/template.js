@@ -1,4 +1,4 @@
-var Template = {
+module.exports = {
 
   init: function() {
     this.root = null;
@@ -56,30 +56,27 @@ var Template = {
     this.rethrowErrors = savedRethrowErrors;
     return res;
   }
-});
+};
 
 
-Template.tags = {};
+module.exports.tags = {};
 
-Template.registerTag = function(name, klass) {
+module.exports.registerTag = function(name, klass) {
   Liquid.Template.tags[ name ] = klass;
-}
+};
 
-Template.registerFilter = function(filters) {
+module.exports.registerFilter = function(filters) {
   Liquid.Strainer.globalFilter(filters)
-}
+};
 
-Template.tokenize = function(src) {
+module.exports.tokenize = function(src) {
   var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
   // removes the rogue empty element at the beginning of the array
   if(tokens[0] == ''){ tokens.shift(); }
 //  console.log("Source tokens:", tokens)
   return tokens;
-}
+};
 
-
-Template.parse =  function(src) {
+module.exports.parse = function(src) {
   return (new Liquid.Template()).parse(src);
-}
-
-module.exports = Template;
+};

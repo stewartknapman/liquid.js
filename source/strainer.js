@@ -1,4 +1,4 @@
-var Strainer = {
+module.exports = {
 
   init: function(context) {
     this.context = context;
@@ -12,18 +12,18 @@ var Strainer = {
   }
 };
 
-Strainer.filters = {};
+module.exports.filters = {};
 
-Strainer.globalFilter = function(filters) {
+module.exports.globalFilter = function(filters) {
   for (var f in filters) {
     Liquid.Strainer.filters[f] = filters[f];
   }
 }
 
 // Array of methods to keep...
-Strainer.requiredMethods = ['respondTo', 'context']; 
+module.exports.requiredMethods = ['respondTo', 'context']; 
 
-Strainer.create = function(context) {
+module.exports.create = function(context) {
   var strainer = new Liquid.Strainer(context);
   for (var f in Liquid.Strainer.filters) {
     //console.log('f', f);
@@ -32,5 +32,3 @@ Strainer.create = function(context) {
   }
   return strainer;
 }
-
-module.exports = Strainer;
