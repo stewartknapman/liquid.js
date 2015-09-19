@@ -28,5 +28,8 @@
   "homepage": "https://github.com/darthapo/liquid.js",
   "devDependencies": {
     "browserify": "^11.1.0"
+  },
+  "dependencies": {
+    "strftime": "^0.9.2"
   }
 }

@@ -41,6 +41,10 @@ Liquid.Drop = Liquid.Class.extend(require('./drop'));
 require('./default_tags').registerDefaultTags(Liquid);
 Liquid.Template.registerFilter(require('./default_filters'));
 
+if(!(new Date()).strftime) {
+  Date.prototype.strftime = require('strftime');
+};
+
 //= require "extensions"
 //= require "class"
 //= require "tag"
