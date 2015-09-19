@@ -58,25 +58,27 @@ module.exports = {
   }
 };
 
-
-module.exports.tags = {};
-
-module.exports.registerTag = function(name, klass) {
-  Liquid.Template.tags[ name ] = klass;
-};
-
-module.exports.registerFilter = function(filters) {
-  Liquid.Strainer.globalFilter(filters)
-};
-
-module.exports.tokenize = function(src) {
-  var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
-  // removes the rogue empty element at the beginning of the array
-  if(tokens[0] == ''){ tokens.shift(); }
-//  console.log("Source tokens:", tokens)
-  return tokens;
-};
-
-module.exports.parse = function(src) {
-  return (new Liquid.Template()).parse(src);
+module.exports.applyMethods = function (Liquid) {
+  Liquid.Template.tags = {};
+  
+  Liquid.Template.registerTag = function(name, klass) {
+    Liquid.Template.tags[ name ] = klass;
+  }
+  
+  Liquid.Template.registerFilter = function(filters) {
+    Liquid.Strainer.globalFilter(filters)
+  }
+  
+  Liquid.Template.tokenize = function(src) {
+    var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
+    // removes the rogue empty element at the beginning of the array
+    if(tokens[0] == ''){ tokens.shift(); }
+  //  console.log("Source tokens:", tokens)
+    return tokens;
+  }
+  
+  
+  Liquid.Template.parse =  function(src) {
+    return (new Liquid.Template()).parse(src);
+  }
 };

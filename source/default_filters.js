@@ -1,5 +1,5 @@
 // Standard Filters
-Liquid.Template.registerFilter({
+module.exports = {
   
   _HTML_ESCAPE_MAP: {
     '&': '&amp;',
@@ -189,4 +189,4 @@ Liquid.Template.registerFilter({
     return '' + (input || '').toString() + (string || '').toString();
   }
 
-});
+};

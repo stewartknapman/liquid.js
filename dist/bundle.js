@@ -218,29 +218,32 @@ module.exports = {
 
 };
 
-module.exports.operators = {
-  '==': function(l,r) {  return (l == r); },
-  '=':  function(l,r) { return (l == r); },
-  '!=': function(l,r) { return (l != r); },
-  '<>': function(l,r) { return (l != r); },
-  '<':  function(l,r) { return (l < r); },
-  '>':  function(l,r) { return (l > r); },
-  '<=': function(l,r) { return (l <= r); },
-  '>=': function(l,r) { return (l >= r); },
 
-  'contains': function(l,r) {
-    if ( Object.prototype.toString.call(l) === '[object Array]' ) {
-      return l.indexOf(r) >= 0;
-    } else {
-      return l.match(r);
-    }
-  },
-  // HACK Apply from Liquid.extensions.object; extending Object sad.
-  //'hasKey': function(l,r) { return l.hasKey(r); }
-  'hasKey':   function(l,r) { return Liquid.extensions.object.hasKey.call(l, r); },
-  //'hasValue': function(l,r) { return l.hasValue(r); }
-  'hasValue': function(l,r) { return Liquid.extensions.object.hasValue.call(l, r); }
-}
+module.exports.applyMethods = function (Liquid) {
+  Liquid.Condition.operators = {
+    '==': function(l,r) {  return (l == r); },
+    '=':  function(l,r) { return (l == r); },
+    '!=': function(l,r) { return (l != r); },
+    '<>': function(l,r) { return (l != r); },
+    '<':  function(l,r) { return (l < r); },
+    '>':  function(l,r) { return (l > r); },
+    '<=': function(l,r) { return (l <= r); },
+    '>=': function(l,r) { return (l >= r); },
+  
+    'contains': function(l,r) {
+      if ( Object.prototype.toString.call(l) === '[object Array]' ) {
+        return l.indexOf(r) >= 0;
+      } else {
+        return l.match(r);
+      }
+    },
+    // HACK Apply from Liquid.extensions.object; extending Object sad.
+    //'hasKey': function(l,r) { return l.hasKey(r); }
+    'hasKey':   function(l,r) { return Liquid.extensions.object.hasKey.call(l, r); },
+    //'hasValue': function(l,r) { return l.hasValue(r); }
+    'hasValue': function(l,r) { return Liquid.extensions.object.hasValue.call(l, r); }
+  }
+};
 
 module.exports.ElseCondition = {
 
@@ -509,34 +512,27 @@ var Liquid = {
 
 require('./extensions')();
 Liquid.extensions = require('./extensions').extensions;
-
 require('./class').init_class(Liquid);
+
 Liquid.Tag = Liquid.Class.extend(require('./tag'));
 Liquid.Block = Liquid.Tag.extend(require('./block'));
 Liquid.Document = Liquid.Block.extend(require('./document'));
-
 Liquid.Strainer = Liquid.Class.extend(require('./strainer'));
-Liquid.Strainer.filters = require('./strainer').filters;
-Liquid.Strainer.globalFilter = require('./strainer').globalFilter;
-Liquid.Strainer.requiredMethods = require('./strainer').requiredMethods;
-Liquid.Strainer.create = require('./strainer').create;
+require('./strainer').applyMethods(Liquid);
 
 Liquid.Context = Liquid.Class.extend(require('./context'));
-
 Liquid.Template = Liquid.Class.extend(require('./template'));
-Liquid.Template.tags = require('./template').tags;
-Liquid.Template.registerTag = require('./template').registerTag;
-Liquid.Template.registerFilter = require('./template').registerFilter;
-Liquid.Template.tokenize = require('./template').tokenize;
-Liquid.Template.parse = require('./template').parse;
+require('./template').applyMethods(Liquid);
 
 Liquid.Variable = Liquid.Class.extend(require('./variable'));
-
 Liquid.Condition = Liquid.Class.extend(require('./condition'));
-Liquid.Condition.operators = require('./condition').operators;
-Liquid.ElseCondition = Liquid.Condition.extend(require('./condition').ElseCondition);
+require('./condition').applyMethods(Liquid);
 
+Liquid.ElseCondition = Liquid.Condition.extend(require('./condition').ElseCondition);
 Liquid.Drop = Liquid.Class.extend(require('./drop'));
+
+require('./default_tags').registerDefaultTags(Liquid);
+Liquid.Template.registerFilter(require('./default_filters'));
 
 //= require "extensions"
 //= require "class"
@@ -563,7 +559,737 @@ if (typeof exports !== 'undefined') {
   exports.Liquid = Liquid;
 }
 window.Liquid = Liquid;
-},{"./block":1,"./class":2,"./condition":3,"./context":4,"./document":6,"./drop":7,"./extensions":8,"./strainer":9,"./tag":10,"./template":11,"./variable":12}],6:[function(require,module,exports){
+},{"./block":1,"./class":2,"./condition":3,"./context":4,"./default_filters":6,"./default_tags":7,"./document":8,"./drop":9,"./extensions":10,"./strainer":11,"./tag":12,"./template":13,"./variable":14}],6:[function(require,module,exports){
+// Standard Filters
+module.exports = {
+  
+  _HTML_ESCAPE_MAP: {
+    '&': '&amp;',
+    '>': '&gt;',
+    '<': '&lt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  },
+
+  size: function(iterable) {
+    // could this be done better?
+    var length = 0;
+    if (iterable['length']) {
+      length = iterable.length;
+    } else if (typeof iterable === 'object') {
+      length = Object.keys(iterable).length; // need polyfill?
+    }
+    return length;
+  },
+  
+  downcase: function(input) {
+    return input.toString().toLowerCase();
+  },
+  
+  upcase: function(input) {
+    return input.toString().toUpperCase();
+  },
+  
+  capitalize: function(input) {
+    return input.toString().capitalize();
+  },
+  
+  handleize: function(input) {
+    return input.toString().replace(/\s/g, '-').toLowerCase();
+  },
+  
+  escape: function(input) {
+    var self = this;
+    return input.replace(/[&<>"']/g, function(chr) {
+      return self._HTML_ESCAPE_MAP[chr];
+    });
+  },
+
+  h: function(input) {
+    var self = this;
+    return input.replace(/[&<>"']/g, function(chr) {
+      return self._HTML_ESCAPE_MAP[chr];
+    });
+  },
+  
+  truncate: function(input, length, string) {
+    if(!input || input == ''){ return ''; }
+    length = length || 50;
+    string = string || "...";
+
+    var seg = input.slice(0, length);
+    return (input.length > length ?
+            input.slice(0, length) + string : 
+            input);
+  },
+  
+  truncatewords: function(input, words, string) {
+    if(!input || input == ''){ return ''; }
+    words = parseInt(words || 15);
+    string = string || '...';
+    var wordlist = input.toString().split(" "),
+        l = Math.max((words), 0);
+    return (wordlist.length > l) ? wordlist.slice(0,l).join(' ') + string : input;
+  },
+
+  truncate_words: function(input, words, string) {
+    if(!input || input == ''){ return ''; }
+    words = parseInt(words || 15);
+    string = string || '...';
+    var wordlist = input.toString().split(" "),
+        l = Math.max((words), 0);
+    return (wordlist.length > l) ? wordlist.slice(0,l).join(' ') + string : input;
+  },
+  
+  strip_html: function(input) {
+    return input.toString().replace(/<.*?>/g, '');
+  },
+  
+  strip_newlines: function(input) {
+    return input.toString().replace(/\n/g, '')
+  },
+  
+  join: function(input, separator) {
+    separator = separator ||  ' ';
+    return input.join(separator);
+  },
+
+  split: function(input, separator) {
+    separator = separator ||  ' ';
+    return input.split(separator);
+  },
+  
+  sort: function(input) {
+    return input.sort();
+  },
+  
+  reverse: function(input) {
+    return input.reverse();
+  },
+  
+  replace: function(input, string, replacement) {
+    replacement = replacement || '';
+    return input.toString().replace(new RegExp(string, 'g'), replacement);
+  },
+  
+  replace_first: function(input, string, replacement) {
+    replacement = replacement || '';
+    return input.toString().replace(new RegExp(string, ""), replacement);
+  },
+  
+  newline_to_br: function(input) {
+    return input.toString().replace(/\n/g, "<br/>\n");
+  },
+  
+  date: function(input, format) {
+    var date;
+    if( input instanceof Date ){ date = input; }
+    if(!(date instanceof Date) && input == 'now'){ date = new Date(); }
+    if(!(date instanceof Date) && typeof(input) == 'number'){ date = new Date(input * 1000); }
+    if(!(date instanceof Date) && typeof(input) == 'string'){ date = new Date(Date.parse(input));}
+    if(!(date instanceof Date)){ return input; } // Punt
+    return date.strftime(format);
+  },
+  
+  first: function(input) {
+    return input[0];
+  },
+  
+  last: function(input) {
+    input = input;
+    return input[input.length -1];
+  },
+
+  minus: function(input, number) {
+    return (Number(input) || 0) - (Number(number) || 0);
+  },
+
+  plus: function(input, number) {
+    return (Number(input) || 0) + (Number(number) || 0);
+  },
+
+  times: function(input, number) {
+    return (Number(input) || 0) * (Number(number) || 0);
+  },
+
+  divided_by: function(input, number) {
+    return (Number(input) || 0) / (Number(number) || 0);
+  },
+
+  modulo: function(input, number) {
+    return (Number(input) || 0) % (Number(number) || 0);
+  },
+
+  map: function(input, property) {
+    input = input || [];
+    var results = [];
+    for (var i = 0; i < input.length; i++) {
+      results.push(input[i][property]);
+    }
+    return results;
+  },
+  escape_once: function(input) {
+    var self = this;
+    return input.replace(/["><']|&(?!([a-zA-Z]+|(#\d+));)/g, function(chr) {
+      return self._HTML_ESCAPE_MAP[chr];
+    });
+  },
+
+  remove: function(input, string) {
+    return input.toString().replace(new RegExp(string, 'g'), '');
+  },
+
+  remove_first: function(input, string) {
+    return input.toString().replace(string, '');
+  },
+
+  prepend: function(input, string) {
+    return '' + (string || '').toString() + (input || '').toString();
+  },
+
+  append: function(input, string) {
+    return '' + (input || '').toString() + (string || '').toString();
+  }
+
+};
+
+},{}],7:[function(require,module,exports){
+module.exports.registerDefaultTags = function (Liquid) {
+  var hackObjectEach = function(fun /*, thisp*/) {
+    if (typeof fun != "function")
+      throw 'Object.each requires first argument to be a function';
+  
+    var i = 0;
+    var thisp = arguments[1];
+    for (var p in this) {
+      var value = this[p], pair = [p, value];
+      pair.key = p;
+      pair.value = value;
+      fun.call(thisp, pair, i, this);
+      i++;
+    }
+  
+    return null;
+  };
+  
+  // Default Tags...
+  Liquid.Template.registerTag( 'assign', Liquid.Tag.extend({
+  
+    tagSyntax: /((?:\(?[\w\-\.\[\]]\)?)+)\s*=\s*(.+)/,
+    
+    init: function(tagName, markup, tokens) {
+      var parts = markup.match(this.tagSyntax);
+  
+      if( parts ) {
+        this.to   = parts[1];
+        this.from = parts[2];
+      } else {
+        throw ("Syntax error in 'assign' - Valid syntax: assign [var] = [source]");
+      }
+      this._super(tagName, markup, tokens)
+    },
+    render: function(context) {
+      var value = new Liquid.Variable(this.from);
+      context.scopes.last()[this.to.toString()] = value.render(context);
+      return '';
+    }
+  }));
+  
+  // Cache is just like capture, but it inserts into the root scope...
+  Liquid.Template.registerTag( 'cache', Liquid.Block.extend({
+    tagSyntax: /(\w+)/,
+  
+    init: function(tagName, markup, tokens) {
+      var parts = markup.match(this.tagSyntax)
+      if( parts ) {
+        this.to = parts[1];
+      } else {
+        throw ("Syntax error in 'cache' - Valid syntax: cache [var]");
+      }
+      this._super(tagName, markup, tokens);
+    },
+    render: function(context) {
+      var output = this._super(context);
+      context.scopes.last()[this.to] = [output].flatten().join('');
+      return '';
+    }
+  }));
+  
+  
+  Liquid.Template.registerTag( 'capture', Liquid.Block.extend({
+    tagSyntax: /(\w+)/,
+  
+    init: function(tagName, markup, tokens) {
+      var parts = markup.match(this.tagSyntax)
+      if( parts ) {
+        this.to = parts[1];
+      } else {
+        throw ("Syntax error in 'capture' - Valid syntax: capture [var]");
+      }
+      this._super(tagName, markup, tokens);
+    },
+    render: function(context) {
+      var output = this._super(context);
+      context.scopes.last()[this.to.toString()] = [output].flatten().join('');
+      return '';
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'case', Liquid.Block.extend({
+  
+    tagSyntax     : /("[^"]+"|'[^']+'|[^\s,|]+)/,
+    tagWhenSyntax : /("[^"]+"|'[^']+'|[^\s,|]+)(?:(?:\s+or\s+|\s*\,\s*)("[^"]+"|'[^']+'|[^\s,|]+.*))?/,
+  
+    init: function(tagName, markup, tokens) {
+      this.blocks = [];
+      this.nodelist = [];
+  
+      var parts = markup.match(this.tagSyntax)
+      if( parts ) {
+        this.left = parts[1];
+      } else {
+        throw ("Syntax error in 'case' - Valid syntax: case [condition]");
+      }
+  
+      this._super(tagName, markup, tokens);
+    },
+    unknownTag: function(tag, markup, tokens) {
+      switch(tag) {
+        case 'when':
+          this.recordWhenCondition(markup);
+          break;
+        case 'else':
+          this.recordElseCondition(markup);
+          break;
+        default:
+          this._super(tag, markup, tokens);
+      }
+  
+    },
+    render: function(context) {
+      var self = this,
+          output = [],
+          execElseBlock = true;
+  
+      context.stack(function(){
+        for (var i=0; i < self.blocks.length; i++) {
+          var block = self.blocks[i];
+          if( block.isElse  ) {
+            if(execElseBlock == true){ output = [output, self.renderAll(block.attachment, context)].flatten(); }
+            return output;
+          } else if( block.evaluate(context) ) {
+            execElseBlock = false;
+            output = [output, self.renderAll(block.attachment, context)].flatten();
+          }
+        };
+      });
+  
+      return output;
+    },
+    recordWhenCondition: function(markup) {
+      while(markup) {
+        var parts = markup.match(this.tagWhenSyntax);
+        if(!parts) {
+          throw ("Syntax error in tag 'case' - Valid when condition: {% when [condition] [or condition2...] %} ");
+        }
+  
+        markup = parts[2];
+  
+        var block = new Liquid.Condition(this.left, '==', parts[1]);
+        this.blocks.push( block );
+        this.nodelist = block.attach([]);
+      }
+    },
+    recordElseCondition: function(markup) {
+      if( (markup || '').strip() != '') {
+        throw ("Syntax error in tag 'case' - Valid else condition: {% else %} (no parameters) ")
+      }
+      var block = new Liquid.ElseCondition();
+      this.blocks.push(block);
+      this.nodelist = block.attach([]);
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'comment', Liquid.Block.extend({
+    render: function(context) {
+      return '';
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'cycle', Liquid.Tag.extend({
+  
+    tagSimpleSyntax: /"[^"]+"|'[^']+'|[^\s,|]+/,
+    tagNamedSyntax:  /("[^"]+"|'[^']+'|[^\s,|]+)\s*\:\s*(.*)/,
+  
+    init: function(tag, markup, tokens) {
+      var matches, variables;
+      // Named first...
+      matches = markup.match(this.tagNamedSyntax);
+      if(matches) {
+        this.variables = this.variablesFromString(matches[2]);
+        this.name = matches[1];
+      } else {
+        // Try simple...
+        matches = markup.match(this.tagSimpleSyntax);
+        if(matches) {
+          this.variables = this.variablesFromString(markup);
+          this.name = "'"+ this.variables.toString() +"'";
+        } else {
+          // Punt
+          throw ("Syntax error in 'cycle' - Valid syntax: cycle [name :] var [, var2, var3 ...]");
+        }
+      }
+      this._super(tag, markup, tokens);
+    },
+  
+    render: function(context) {
+      var self   = this,
+          key    = context.get(self.name),
+          output = '';
+  
+      if(!context.registers['cycle']) {
+        context.registers['cycle'] = {};
+      }
+  
+      if(!context.registers['cycle'][key]) {
+        context.registers['cycle'][key] = 0;
+      }
+  
+      context.stack(function(){
+        var iter    = context.registers['cycle'][key],
+            results = context.get( self.variables[iter] );
+        iter += 1;
+        if(iter == self.variables.length){ iter = 0; }
+        context.registers['cycle'][key] = iter;
+        output = results;
+      });
+  
+      return output;
+    },
+  
+    variablesFromString: function(markup) {
+      return markup.split(',').map(function(varname){
+        var match = varname.match(/\s*("[^"]+"|'[^']+'|[^\s,|]+)\s*/);
+        return (match[1]) ? match[1] : null
+      });
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'for', Liquid.Block.extend({
+    tagSyntax: /(\w+)\s+in\s+((?:\(?[\w\-\.\[\]]\)?)+)/,
+  
+    init: function(tag, markup, tokens) {
+      var matches = markup.match(this.tagSyntax);
+      if(matches) {
+        this.variableName = matches[1];
+        this.collectionName = matches[2];
+        this.name = this.variableName +"-"+ this.collectionName;
+        this.attributes = {};
+        var attrmarkup = markup.replace(this.tagSyntax, '');
+        var attMatchs = markup.match(/(\w*?)\s*\:\s*("[^"]+"|'[^']+'|[^\s,|]+)/g);
+        if(attMatchs) {
+          attMatchs.each(function(pair){
+            pair = pair.split(":");
+            this.attributes[pair[0].strip()] = pair[1].strip();
+          }, this);
+        }
+      } else {
+        throw ("Syntax error in 'for loop' - Valid syntax: for [item] in [collection]");
+      }
+      this._super(tag, markup, tokens);
+    },
+  
+    render: function(context) {
+      var self       = this,
+          output     = [],
+          collection = (context.get(this.collectionName) || []),
+          range      = [0, collection.length];
+  
+      if(!context.registers['for']){ context.registers['for'] = {}; }
+  
+      if(this.attributes['limit'] || this.attributes['offset']) {
+        var offset   = 0,
+            limit    = 0,
+            rangeEnd = 0,
+            segment = null;
+  
+        if(this.attributes['offset'] == 'continue')
+          { offset = context.registers['for'][this.name]; }
+        else
+          { offset = context.get( this.attributes['offset'] ) || 0; }
+        
+        limit = context.get( this.attributes['limit']);
+        
+        rangeEnd = (limit) ? offset + limit : collection.length;
+        range = [ offset, rangeEnd ];
+        
+        // Save the range end in the registers so that future calls to
+        // offset:continue have something to pick up
+        context.registers['for'][this.name] = rangeEnd;
+      }
+  
+      // Assumes the collection is an array like object...
+      // segment = collection.slice(range[0], range[1]);
+      // Stewie: Don't assume incase we want to loop a hash like object
+      if (typeof collection === 'object') {
+        if (Array.isArray(collection)) {
+          segment = collection.slice(range[0], range[1]);
+        } else {
+          segment = collection;
+          // Slice object ???
+          // needs hasOwnProperty
+          // segment = {}
+          // var i = 0;
+          // for (var k in collection) {
+          //   if (i >= range[0] && (i < range[1] || range[1] == undefined)) {
+          //     segment[k] = collection[k];
+          //   }
+          //   i++;
+          // }
+        }
+      }
+      
+      if(!segment || segment.length == 0){ return ''; }
+          
+      context.stack(function(){
+        if (Array.isArray(segment)) {
+          var length = segment.length;
+          segment.each(function(item, index){
+            context.set( self.variableName, item );
+            context.set( 'forloop', {
+              name:   self.name,
+              length: length,
+              index:  (index + 1),
+              index0: index,
+              rindex: (length - index),
+              rindex0:(length - index - 1),
+              first:  (index == 0),
+              last:   (index == (length - 1))
+            });
+            output.push( (self.renderAll(self.nodelist, context) || []).join('') );
+          });
+        } else {
+          var length = Object.keys(segment).length;  
+          var index = 0;  
+          for (var key in segment) {
+            var item = segment[key];
+            context.set( self.variableName, item );
+            context.set( 'forloop', {
+              name:   self.name,
+              length: length,
+              index:  (index + 1),
+              index0: index,
+              rindex: (length - index),
+              rindex0:(length - index - 1),
+              first:  (index == 0),
+              last:   (index == (length - 1))
+            });
+            output.push( (self.renderAll(self.nodelist, context) || []).join('') );
+            index++;
+          }
+        }
+      });
+  
+      return [output].flatten().join('');
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'if', Liquid.Block.extend({
+  
+    tagSyntax: /("[^"]+"|'[^']+'|[^\s,|]+)\s*([=!<>a-z_]+)?\s*("[^"]+"|'[^']+'|[^\s,|]+)?/,
+  
+    init: function(tag, markup, tokens) {
+      this.nodelist = [];
+      this.blocks = [];
+      this.pushBlock('if', markup);
+      this._super(tag, markup, tokens);
+    },
+  
+    unknownTag: function(tag, markup, tokens) {
+      if( ['elsif', 'else'].include(tag) ) {
+        this.pushBlock(tag, markup);
+      } else {
+        this._super(tag, markup, tokens);
+      }
+    },
+  
+    render: function(context) {
+      var self = this,
+          output = '';
+      context.stack(function(){
+        for (var i=0; i < self.blocks.length; i++) {
+          var block = self.blocks[i];
+          if( block.evaluate(context) ) {
+            output = self.renderAll(block.attachment, context);
+            return;
+          }
+        };
+      })
+      return [output].flatten().join('');
+    },
+  
+    pushBlock: function(tag, markup) {
+      var block;
+      if(tag == 'else') {
+        block = new Liquid.ElseCondition();
+      } else {
+        var expressions = markup.split(/\b(and|or)\b/).reverse(),
+            expMatches  = expressions.shift().match( this.tagSyntax );
+  
+        if(!expMatches){ throw ("Syntax Error in tag '"+ tag +"' - Valid syntax: "+ tag +" [expression]"); }
+  
+        var condition = new Liquid.Condition(expMatches[1], expMatches[2], expMatches[3]);
+  
+        while(expressions.length > 0) {
+          var operator = expressions.shift(),
+              expMatches  = expressions.shift().match( this.tagSyntax );
+          if(!expMatches){ throw ("Syntax Error in tag '"+ tag +"' - Valid syntax: "+ tag +" [expression]"); }
+  
+          var newCondition = new Liquid.Condition(expMatches[1], expMatches[2], expMatches[3]);
+          newCondition[operator](condition);
+          condition = newCondition;
+        }
+  
+        block = condition;
+      }
+      block.attach([]);
+      this.blocks.push(block);
+      this.nodelist = block.attachment;
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'ifchanged', Liquid.Block.extend({
+  
+    render: function(context) {
+      var self = this,
+          output = '';
+      context.stack(function(){
+        var results = self.renderAll(self.nodelist, context).join('');
+        if(results != context.registers['ifchanged']) {
+          output = results;
+          context.registers['ifchanged'] = output;
+        }
+      });
+      return output;
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'include', Liquid.Tag.extend({
+  
+    tagSyntax: /((?:"[^"]+"|'[^']+'|[^\s,|]+)+)(\s+(?:with|for)\s+((?:"[^"]+"|'[^']+'|[^\s,|]+)+))?/,
+  
+    init: function(tag, markup, tokens) {
+      var matches = (markup || '').match(this.tagSyntax);
+      if(matches) {
+        this.templateName = matches[1];
+        this.templateNameVar = this.templateName.substring(1, this.templateName.length - 1);
+        this.variableName = matches[3];
+        this.attributes = {};
+  
+        var attMatchs = markup.match(/(\w*?)\s*\:\s*("[^"]+"|'[^']+'|[^\s,|]+)/g);
+        if(attMatchs) {
+          attMatchs.each(function(pair){
+            pair = pair.split(":");
+            this.attributes[pair[0].strip()] = pair[1].strip();
+          }, this);
+        }
+      } else {
+        throw ("Error in tag 'include' - Valid syntax: include '[template]' (with|for) [object|collection]");
+      }
+      this._super(tag, markup, tokens);
+    },
+  
+    render: function(context) {
+      var self     = this,
+          source   = Liquid.readTemplateFile( context.get(this.templateName) ),
+          partial  = Liquid.parse(source),
+          variable = context.get((this.variableName || this.templateNameVar)),
+          output   = '';
+      context.stack(function(){
+        // HACK Until we get Object.each working right
+        self.attributes.each = hackObjectEach;
+        self.attributes.each(function(pair){
+          context.set(pair.key, context.get(pair.value));
+        })
+  
+        if(variable instanceof Array) {
+          output = variable.map(function(variable){
+            context.set( self.templateNameVar, variable );
+            return partial.render(context);
+          });
+        } else {
+          context.set(self.templateNameVar, variable);
+          output = partial.render(context);
+        }
+      });
+      output = [output].flatten().join('');
+      return output
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'unless', Liquid.Template.tags['if'].extend({
+  
+    render: function(context) {
+      var self = this,
+          output = '';
+      context.stack(function(){
+        // The first block is called if it evaluates to false...
+        var block = self.blocks[0];
+        if( !block.evaluate(context) ) {
+          output = self.renderAll(block.attachment, context);
+          return;
+        }
+        // the rest are the same..
+        for (var i=1; i < self.blocks.length; i++) {
+          var block = self.blocks[i];
+          if( block.evaluate(context) ) {
+            output = self.renderAll(block.attachment, context);
+            return;
+          }
+        };
+      })
+      return [output].flatten().join('');
+    }
+  }));
+  
+  Liquid.Template.registerTag( 'raw', Liquid.Block.extend({
+    // Override the `parse` function of Liquid.Block to simply pass along all tokens
+    // to render directly (rather than parsing them) until we reach {% endraw %}
+    parse: function(tokens) {
+      if (!this.nodelist) this.nodelist = [];
+      this.nodelist.clear();
+  
+      var token = tokens.shift();
+      tokens.push('');
+      while(tokens.length) {
+  
+        if( /^\{\%/.test(token) ) { // It's a tag...
+          var tagParts = token.match(/^\{\%\s*(\w+)\s*(.*)?\%\}$/);
+  
+          if(tagParts) {
+            // if we found the proper block delimitor just end parsing here and let
+            // the outer block proceed
+            if( this.blockDelimiter == tagParts[1] ) {
+              this.endTag();
+              return;
+            }
+          }
+        }
+  
+        // As long as we didn't hit {% endraw %}, just render whatever we've got
+        // without processing it.
+        this.nodelist.push( token || '');
+        token = tokens.shift(); // Assign the next token to loop again...
+      }
+      this.assertMissingDelimitation();
+    },
+  
+    render: function(context) {
+      return this.nodelist.join('');
+    }
+  }));
+};
+},{}],8:[function(require,module,exports){
 module.exports = {
 
   init: function(tokens){
@@ -575,7 +1301,7 @@ module.exports = {
     // Documents don't need to assert this...
   }
 };
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = {
   setContext: function(context) {
     this.context = context;
@@ -594,9 +1320,8 @@ module.exports = {
   }
 };
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = function () {
-  console.log('Ext');
   
   // Array.indexOf
   if (!Array.prototype.indexOf) {
@@ -755,7 +1480,7 @@ extensions.object.hasValue = function(arg) {
 //}
 
 module.exports.extensions = extensions;
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = {
 
   init: function(context) {
@@ -770,27 +1495,29 @@ module.exports = {
   }
 };
 
-module.exports.filters = {};
-
-module.exports.globalFilter = function(filters) {
-  for (var f in filters) {
-    Liquid.Strainer.filters[f] = filters[f];
+module.exports.applyMethods = function (Liquid) {
+  Liquid.Strainer.filters = {};
+  
+  Liquid.Strainer.globalFilter = function(filters) {
+    for (var f in filters) {
+      Liquid.Strainer.filters[f] = filters[f];
+    }
   }
-}
-
-// Array of methods to keep...
-module.exports.requiredMethods = ['respondTo', 'context']; 
-
-module.exports.create = function(context) {
-  var strainer = new Liquid.Strainer(context);
-  for (var f in Liquid.Strainer.filters) {
-    //console.log('f', f);
-    //console.log('Liquid.Strainer.filters[f]', Liquid.Strainer.filters[f]);
-    strainer[f] = Liquid.Strainer.filters[f];
+  
+  // Array of methods to keep...
+  Liquid.Strainer.requiredMethods = ['respondTo', 'context']; 
+  
+  Liquid.Strainer.create = function(context) {
+    var strainer = new Liquid.Strainer(context);
+    for (var f in Liquid.Strainer.filters) {
+      //console.log('f', f);
+      //console.log('Liquid.Strainer.filters[f]', Liquid.Strainer.filters[f]);
+      strainer[f] = Liquid.Strainer.filters[f];
+    }
+    return strainer;
   }
-  return strainer;
-}
-},{}],10:[function(require,module,exports){
+};
+},{}],12:[function(require,module,exports){
 module.exports = {
 
   init: function(tagName, markup, tokens) {
@@ -810,7 +1537,7 @@ module.exports = {
   
   // From ruby: def name; self.class.name.downcase; end
 };
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = {
 
   init: function() {
@@ -871,29 +1598,31 @@ module.exports = {
   }
 };
 
-
-module.exports.tags = {};
-
-module.exports.registerTag = function(name, klass) {
-  Liquid.Template.tags[ name ] = klass;
+module.exports.applyMethods = function (Liquid) {
+  Liquid.Template.tags = {};
+  
+  Liquid.Template.registerTag = function(name, klass) {
+    Liquid.Template.tags[ name ] = klass;
+  }
+  
+  Liquid.Template.registerFilter = function(filters) {
+    Liquid.Strainer.globalFilter(filters)
+  }
+  
+  Liquid.Template.tokenize = function(src) {
+    var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
+    // removes the rogue empty element at the beginning of the array
+    if(tokens[0] == ''){ tokens.shift(); }
+  //  console.log("Source tokens:", tokens)
+    return tokens;
+  }
+  
+  
+  Liquid.Template.parse =  function(src) {
+    return (new Liquid.Template()).parse(src);
+  }
 };
-
-module.exports.registerFilter = function(filters) {
-  Liquid.Strainer.globalFilter(filters)
-};
-
-module.exports.tokenize = function(src) {
-  var tokens = src.split( /(\{\%.*?\%\}|\{\{.*?\}\}?)/ );
-  // removes the rogue empty element at the beginning of the array
-  if(tokens[0] == ''){ tokens.shift(); }
-//  console.log("Source tokens:", tokens)
-  return tokens;
-};
-
-module.exports.parse = function(src) {
-  return (new Liquid.Template()).parse(src);
-};
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = {
 
   init: function(markup) {
