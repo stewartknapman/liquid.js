@@ -41,10 +41,6 @@ Liquid.Drop = Liquid.Class.extend(require('./drop'));
 require('./default_tags').registerDefaultTags(Liquid);
 Liquid.Template.registerFilter(require('./default_filters'));
 
-if(!(new Date()).strftime) {
-  Date.prototype.strftime = require('strftime');
-};
-
 if (typeof exports !== 'undefined') {
   if (typeof module !== 'undefined' && module.exports) {
     exports = module.exports = Liquid;

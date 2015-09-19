@@ -1165,18 +1165,18 @@ Liquid.Drop = Liquid.Class.extend(require('./drop'));
 require('./default_tags').registerDefaultTags(Liquid);
 Liquid.Template.registerFilter(require('./default_filters'));
 
-if(!(new Date()).strftime) {
-  Date.prototype.strftime = require('strftime');
-};
-
 if (typeof exports !== 'undefined') {
   if (typeof module !== 'undefined' && module.exports) {
     exports = module.exports = Liquid;
   }
   exports.Liquid = Liquid;
 }
-window.Liquid = Liquid;
-},{"./block":2,"./class":3,"./condition":4,"./context":5,"./default_filters":7,"./default_tags":8,"./document":9,"./drop":10,"./extensions":11,"./strainer":12,"./tag":13,"./template":14,"./variable":15,"strftime":1}],7:[function(require,module,exports){
+if (typeof window !== 'undefined') {
+  window.Liquid = Liquid;
+}
+},{"./block":2,"./class":3,"./condition":4,"./context":5,"./default_filters":7,"./default_tags":8,"./document":9,"./drop":10,"./extensions":11,"./strainer":12,"./tag":13,"./template":14,"./variable":15}],7:[function(require,module,exports){
+var strftime = require('strftime');
+
 // Standard Filters
 module.exports = {
   
@@ -1305,7 +1305,7 @@ module.exports = {
     if(!(date instanceof Date) && typeof(input) == 'number'){ date = new Date(input * 1000); }
     if(!(date instanceof Date) && typeof(input) == 'string'){ date = new Date(Date.parse(input));}
     if(!(date instanceof Date)){ return input; } // Punt
-    return date.strftime(format, date);
+    return strftime(format, date);
   },
   
   first: function(input) {
@@ -1370,7 +1370,7 @@ module.exports = {
 
 };
 
-},{}],8:[function(require,module,exports){
+},{"strftime":1}],8:[function(require,module,exports){
 module.exports.registerDefaultTags = function (Liquid) {
   var hackObjectEach = function(fun /*, thisp*/) {
     if (typeof fun != "function")
