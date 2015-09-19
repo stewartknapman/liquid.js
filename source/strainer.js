@@ -1,18 +1,18 @@
-module.exports = {
-
-  init: function(context) {
-    this.context = context;
-  },
+module.exports = function (Liquid) {
+  Liquid.Strainer = Liquid.Class.extend({
   
-  respondTo: function(methodName) {
-    methodName = methodName.toString();
-    if (methodName.match(/^__/)) return false;
-    if (Liquid.Strainer.requiredMethods.include(methodName)) return false;
-    return (methodName in this);
-  }
-};
-
-module.exports.applyMethods = function (Liquid) {
+    init: function(context) {
+      this.context = context;
+    },
+    
+    respondTo: function(methodName) {
+      methodName = methodName.toString();
+      if (methodName.match(/^__/)) return false;
+      if (Liquid.Strainer.requiredMethods.include(methodName)) return false;
+      return (methodName in this);
+    }
+  });
+  
   Liquid.Strainer.filters = {};
   
   Liquid.Strainer.globalFilter = function(filters) {

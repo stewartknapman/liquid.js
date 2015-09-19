@@ -1,4 +1,4 @@
-module.exports.registerDefaultTags = function (Liquid) {
+module.exports = function (Liquid) {
   var hackObjectEach = function(fun /*, thisp*/) {
     if (typeof fun != "function")
       throw 'Object.each requires first argument to be a function';

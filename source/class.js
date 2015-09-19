@@ -1,4 +1,4 @@
-module.exports.init_class = function (obj) {
+module.exports = function (Liquid) {
   
   /* Simple JavaScript Inheritance
    * By John Resig http://ejohn.org/
@@ -63,6 +63,6 @@ module.exports.init_class = function (obj) {
      
       return Class;
     };
-  }).call(obj);
+  }).call(Liquid);
   
 };
